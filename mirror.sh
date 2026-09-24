@@ -52,10 +52,20 @@ for line in "${REPOS[@]}"; do
   done
 
   dir="$WORK/$name.git"
-  if git clone --quiet --mirror "https://x-access-token:${GH_MIRROR_TOKEN}@github.com/$GH_OWNER/$name.git" "$dir" 2>&1 \
-     && git -C "$dir" push --quiet --prune \
-          "https://oauth2:${GITLAB_TOKEN}@gitlab.com/$GITLAB_NAMESPACE_PATH/$name.git" \
-          '+refs/heads/*:refs/heads/*' '+refs/tags/*:refs/tags/*' 2>&1; then
+  pushed=false
+  if git clone --quiet --mirror "https://x-access-token:${GH_MIRROR_TOKEN}@github.com/$GH_OWNER/$name.git" "$dir" 2>&1; then
+    # 作成直後のプロジェクト等でGitLabが一時的に422/5xxを返すことがあるため再試行
+    for wait in 0 20 60; do
+      sleep "$wait"
+      if git -C "$dir" push --quiet --prune \
+           "https://oauth2:${GITLAB_TOKEN}@gitlab.com/$GITLAB_NAMESPACE_PATH/$name.git" \
+           '+refs/heads/*:refs/heads/*' '+refs/tags/*:refs/tags/*' 2>&1; then
+        pushed=true; break
+      fi
+      echo "::warning::$name: push失敗、再試行します"
+    done
+  fi
+  if $pushed; then
     ok=$((ok+1))
   else
     echo "::error::$name: clone/push失敗"; failed+=("$name")
