@@ -94,7 +94,7 @@ backup_releases() { # NAME PID RELEASES_JSON
     kept_tags+=("$tag")
     # このバージョンで既にアップロード済みのファイル名一覧
     local have="" pkgid
-    pkgid="$(gl GET "/projects/$pid/packages?package_type=generic&package_name=$PKG&package_version=$etag" | jq -r '.[0].id // empty')"
+    pkgid="$(gl GET "/projects/$pid/packages?package_type=generic&package_name=$PKG&package_version=$etag" | jq -r '(arrays | .[0].id) // empty')"
     [[ -n "$pkgid" ]] && have="$(gl GET "/projects/$pid/packages/$pkgid/package_files?per_page=100" | jq -r '.[]?.file_name')"
     while IFS=$'\t' read -r aname aurl; do
       [[ -z "$aname" ]] && continue
