@@ -25,7 +25,7 @@ jobs:
       - uses: actions/checkout@v4
       - name: Mirror all repositories
         env:
-          GH_MIRROR_TOKEN: ${{ secrets.GH_MIRROR_TOKEN }}
+          GH_TOKEN: ${{ github.token }}
           GITLAB_TOKEN: ${{ secrets.GITLAB_TOKEN }}
           GITLAB_NAMESPACE_ID: ${{ vars.GITLAB_NAMESPACE_ID }}
           GITLAB_NAMESPACE_PATH: ${{ vars.GITLAB_NAMESPACE_PATH }}

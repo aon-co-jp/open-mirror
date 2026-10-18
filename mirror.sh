@@ -5,7 +5,7 @@
 #   - Releases: GitLabのReleaseとして再作成、添付ファイルはGeneric Package Registryへ
 #   - Issue / PR / コメント / レビュー / リポジトリ情報: JSONとしてメタデータ用プロジェクトへ
 # 必要な環境変数:
-#   GH_MIRROR_TOKEN        GitHub fine-grained PAT (Contents / Issues / Pull requests: Read-only)
+#   GH_TOKEN               Actions標準のgithub.token(公開リポジトリの読み取りのみ。APIレート制限緩和用で、PATは不要)
 #   GITLAB_TOKEN           GitLab PAT (api)
 #   GITLAB_NAMESPACE_ID    例: 143088430
 #   GITLAB_NAMESPACE_PATH  例: aon-co-jp-group
@@ -16,7 +16,7 @@
 #   METADATA_PROJECT       メタデータ保存先プロジェクト名(既定: github-metadata-backup)
 set -uo pipefail
 
-: "${GH_MIRROR_TOKEN:?}" "${GITLAB_TOKEN:?}" "${GITLAB_NAMESPACE_ID:?}" "${GITLAB_NAMESPACE_PATH:?}"
+: "${GH_TOKEN:?}" "${GITLAB_TOKEN:?}" "${GITLAB_NAMESPACE_ID:?}" "${GITLAB_NAMESPACE_PATH:?}"
 GH_OWNER="aon-co-jp"
 GL_API="https://gitlab.com/api/v4"
 RELEASE_KEEP="${RELEASE_KEEP:-make-disk:3}"
@@ -24,8 +24,8 @@ META_PROJECT="${METADATA_PROJECT:-github-metadata-backup}"
 PKG="github-release"
 WORK="$(mktemp -d)"
 trap 'rm -rf "$WORK"' EXIT
-export GH_TOKEN="$GH_MIRROR_TOKEN"
-GH_URL="https://x-access-token:${GH_MIRROR_TOKEN}@github.com/$GH_OWNER"
+export GIT_TERMINAL_PROMPT=0
+GH_URL="https://github.com/$GH_OWNER" # 公開リポジトリのみ対象なので認証なし
 GL_URL="https://oauth2:${GITLAB_TOKEN}@gitlab.com/$GITLAB_NAMESPACE_PATH"
 
 gl() { # gl METHOD PATH [curl args...]
@@ -101,7 +101,7 @@ backup_releases() { # NAME PID RELEASES_JSON
       local purl="$GL_API/projects/$pid/packages/generic/$PKG/$etag/$(urlenc "$aname")"
       if ! grep -qxF -- "$aname" <<<"$have"; then
         echo "添付ファイル転送: $tag/$aname"
-        if curl -sSfL -H "Authorization: Bearer $GH_MIRROR_TOKEN" -H "Accept: application/octet-stream" "$aurl" -o "$WORK/asset" \
+        if curl -sSfL -H "Accept: application/octet-stream" "$aurl" -o "$WORK/asset" \
            && curl -sSf -H "PRIVATE-TOKEN: $GITLAB_TOKEN" --upload-file "$WORK/asset" "$purl?select=package_file" -o /dev/null; then :; else
           echo "::error::$name: $tag/$aname 転送失敗"; rc=1; rm -f "$WORK/asset"; continue
         fi
@@ -156,7 +156,7 @@ META_PID="$(gl_project "$META_PROJECT" "GitHub aon-co-jp の Issue/PR/Release �
 mkdir -p "$WORK/meta"
 git clone --quiet "$GL_URL/$META_PROJECT.git" "$WORK/meta" 2>/dev/null || git -C "$WORK/meta" init --quiet -b main
 
-mapfile -t REPOS < <(gh api --paginate "user/repos?affiliation=owner&per_page=100" \
+mapfile -t REPOS < <(gh api --paginate "users/$GH_OWNER/repos?per_page=100" \
   --jq '.[] | "\(.name)\t\(.description // "")"')
 
 ok=0; skip=0; failed=()
