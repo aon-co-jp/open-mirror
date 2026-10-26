@@ -1,6 +1,6 @@
-# gitlab-mirror
+# open-mirror(旧 gitlab-mirror)
 
-`github.com/aon-co-jp` の全リポジトリを `gitlab.com/aon-co-jp-group` へ**一方向**でミラーするバックアップ用GitHub Actions。
+`github.com/aon-co-jp` の**公開**リポジトリ(非公開は対象外)を `gitlab.com/aon-co-jp-group` へ**一方向**でミラーするバックアップ用GitHub Actions。
 
 - 実行: 毎日 04:00 JST + 手動実行(Actions → Mirror to GitLab → Run workflow。`only_repos`で対象を絞ったテストも可)
 - GitLab側にプロジェクトが無ければ private で自動作成
@@ -16,11 +16,18 @@
 
 | 種類 | 名前 | 内容 |
 |---|---|---|
-| Secret | `GH_MIRROR_TOKEN` | GitHub fine-grained PAT(All repositories / Contents・Issues・Pull requests: Read-only)、期限2027-09 |
+| (自動) | `GITHUB_TOKEN` | Actions標準のトークン。公開リポジトリの読み取りだけに使う(PAT不要)。旧Secret `GH_MIRROR_TOKEN` は不要になったので削除してよい |
 | Secret | `GITLAB_TOKEN` | GitLab PAT(api)、期限2027-09-24 |
 | Variable | `GITLAB_NAMESPACE_ID` | `143088430` |
 | Variable | `GITLAB_NAMESPACE_PATH` | `aon-co-jp-group` |
 | Variable(任意) | `EXCLUDE_REPOS` | 除外するリポジトリ名(空白区切り) |
 | Variable(任意) | `RELEASE_KEEP` | 添付ファイルを保持する最新リリース数(既定 `make-disk:3`。未記載のリポジトリは全件) |
 
-⚠ 両トークンは約1年で失効する。失効前に再発行してSecretsを更新すること。
+⚠ `GITLAB_TOKEN` は約1年で失効する。失効前に再発行してSecretsを更新すること。
+
+## 料金について / Billing
+
+このリポジトリは**公開**にしてある。GitHub Actions は公開リポジトリの標準ランナーなら実行時間が無料(非公開リポジトリは月の無料枠を超えると有料)。
+GitHub Actions is free for public repositories on standard runners (private repositories are billed beyond the monthly free minutes).
+トークンはSecretsに置くため実行ログにも出ない。ただしログ自体は公開される。 / Tokens live in Secrets and are masked in logs, but the logs themselves are public.
+
