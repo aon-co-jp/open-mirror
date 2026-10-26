@@ -31,3 +31,14 @@
 GitHub Actions is free for public repositories on standard runners (private repositories are billed beyond the monthly free minutes).
 トークンはSecretsに置くため実行ログにも出ない。ただしログ自体は公開される。 / Tokens live in Secrets and are masked in logs, but the logs themselves are public.
 
+
+## 紹介ページ・デモ(easy-web.tokyo) / Intro page and demo
+
+- 紹介: https://easy-web.tokyo/open-mirror ・ デモ: https://easy-web.tokyo/open-mirror/demo (ブラウザ内だけで動く説明用。架空データ、何も送信しない)
+- VPS: `/root/easy-web.tokyo/open-mirror` にclone。`open-mirror-web.service`(ポート8125、`deploy/serve-static.py` で `webpage/` を配信)。`/root/open-web-server/domains.toml` に `path_prefix = "/open-mirror"` を追加済み(変更前は `domains.toml.bak-20261026-openmirror`)。更新は `git pull --ff-only` だけ。
+- トップページ(easy-web.tokyo)の紹介は `open-easy-web` の `server/src/main.rs`(`mirror_banner_html`)。
+
+## 状況 / Status
+
+- 稼働中: GitHub の公開リポジトリ → GitLab の毎日のミラー(GitHub Actions、本リポジトリを公開にして無料化)。
+- 予定(まだ動かない): バックアップ元=PC・スマホ・タブレット(ネットに繋がったら自動開始)・VPS・レンタルサーバー・GitHub・ブログ、保存先=GitHub・GitLab・ローカルPC・タブレット・スマホ、厳選リスト、圧縮・展開、暗号化・復号。
