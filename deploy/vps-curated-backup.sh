@@ -7,7 +7,7 @@
 #
 # 設定ファイル /root/vps-curated-backup.conf(リポジトリには入れない)に次を書く:
 #   REPO_URL=https://github.com/<owner>/vps-backup.git   (公開リポジトリ)
-#   TOKEN_FILE=/root/.secrets/<github-token-file>
+#   TOKEN_FILE=/root/.secrets/<github-token-file>   (省略可)
 #   FPR_FILE=/root/vps-data-backup.fpr
 # 厳選の中身は docs/curation の印(◎/○)に対応する。×・△は含めない。
 set -euo pipefail
@@ -15,17 +15,18 @@ set -euo pipefail
 CONF=${CONF:-/root/vps-curated-backup.conf}
 # shellcheck disable=SC1090
 source "$CONF"
-: "${REPO_URL:?}" "${TOKEN_FILE:?}" "${FPR_FILE:?}"
+: "${REPO_URL:?}" "${FPR_FILE:?}"   # TOKEN_FILE は省略可(省略時は git の保存済み認証を使う)
 WORKDIR_REPO=${WORKDIR_REPO:-/root/vps-curated-backup-repo}
 SECRETS_OUT=${SECRETS_OUT:-/root/vps-secrets-out}
 STAMP=$(date +%Y%m%d-%H%M%S)
-TOKEN=$(tr -d '\r\n ' < "$TOKEN_FILE")
+TOKEN=""; [ -n "${TOKEN_FILE:-}" ] && TOKEN=$(tr -d '\r\n ' < "$TOKEN_FILE")
 FPR=$(cat "$FPR_FILE")
 WORK=$(mktemp -d)
 trap 'rm -rf "$WORK"' EXIT
 PLAIN="$WORK/plain"; SECRET="$WORK/secret"
 mkdir -p "$PLAIN/config/nginx" "$PLAIN/config/systemd" "$PLAIN/config/cron" "$PLAIN/db-schema" "$SECRET/db" "$SECRET/config" "$SECRET/files"
 hdr() { printf 'AUTHORIZATION: basic %s' "$(printf 'x-access-token:%s' "$TOKEN" | base64 -w0)"; }
+gitx() { if [ -n "$TOKEN" ]; then git -c http.extraheader="$(hdr)" "$@"; else git "$@"; fi; }
 
 # 秘密らしい語を含むファイルは暗号化側へ回す(取りこぼすより回しすぎる方を選ぶ)
 SECRET_RE='token|secret|passw|api[_-]?key|credential|private[_ -]?key|BEGIN [A-Z ]*PRIVATE'
@@ -92,18 +93,19 @@ if [ "${DRY_RUN:-0}" = 1 ]; then  # 試し実行: 公開せず、中身だけ /t
   rm -rf /tmp/vps-curated-dryrun; mkdir -p /tmp/vps-curated-dryrun; cp -r "$PLAIN"/. /tmp/vps-curated-dryrun/
   echo "DRY_RUN: 平文側の中身を /tmp/vps-curated-dryrun に出しました(push・暗号化はしません)"; exit 0
 fi
-if [ ! -d "$WORKDIR_REPO/.git" ]; then git -c http.extraheader="$(hdr)" clone -q "$REPO_URL" "$WORKDIR_REPO"; fi
+if [ ! -d "$WORKDIR_REPO/.git" ]; then gitx clone -q "$REPO_URL" "$WORKDIR_REPO"; fi
 cd "$WORKDIR_REPO"
-git -c http.extraheader="$(hdr)" pull --rebase -q || true
+gitx pull --rebase -q || true
 git config user.name "vps-curated-backup"; git config user.email "noreply@aon.co.jp"
 mkdir -p curated
 git rm -q --ignore-unmatch curated/vps-curated-*.tar.zst || true
 cp "$WORK/$PLAIN_OUT" curated/
 cp "$MANIFEST" curated/MANIFEST.txt
-git add -A curated
+cp "$(dirname "$0")/vps-backup-README.md" README.md
+git add -A curated README.md
 if git diff --cached --quiet; then echo "変更なし"; else
   git commit -q -m "curated backup $STAMP"
-  git -c http.extraheader="$(hdr)" push -q origin HEAD
+  gitx push -q origin HEAD
 fi
 echo "平文: $PLAIN_OUT ($(du -h "$WORK/$PLAIN_OUT" | cut -f1))"
 
