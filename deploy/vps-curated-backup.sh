@@ -12,6 +12,7 @@
 # 厳選の中身は docs/curation の印(◎/○)に対応する。×・△は含めない。
 set -euo pipefail
 
+SCRIPT_DIR=$(cd "$(dirname "$0")" && pwd)
 CONF=${CONF:-/root/vps-curated-backup.conf}
 # shellcheck disable=SC1090
 source "$CONF"
@@ -95,17 +96,18 @@ if [ "${DRY_RUN:-0}" = 1 ]; then  # 試し実行: 公開せず、中身だけ /t
 fi
 if [ ! -d "$WORKDIR_REPO/.git" ]; then gitx clone -q "$REPO_URL" "$WORKDIR_REPO"; fi
 cd "$WORKDIR_REPO"
-gitx pull --rebase -q || true
+git checkout -q -B main 2>/dev/null || true
+gitx pull --rebase -q origin main 2>/dev/null || true
 git config user.name "vps-curated-backup"; git config user.email "noreply@aon.co.jp"
 mkdir -p curated
 git rm -q --ignore-unmatch curated/vps-curated-*.tar.zst || true
 cp "$WORK/$PLAIN_OUT" curated/
 cp "$MANIFEST" curated/MANIFEST.txt
-cp "$(dirname "$0")/vps-backup-README.md" README.md
+cp "$SCRIPT_DIR/vps-backup-README.md" README.md
 git add -A curated README.md
 if git diff --cached --quiet; then echo "変更なし"; else
   git commit -q -m "curated backup $STAMP"
-  gitx push -q origin HEAD
+  gitx push -q origin HEAD:main
 fi
 echo "平文: $PLAIN_OUT ($(du -h "$WORK/$PLAIN_OUT" | cut -f1))"
 
