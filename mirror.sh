@@ -17,7 +17,7 @@
 set -uo pipefail
 
 : "${GH_TOKEN:?}" "${GITLAB_TOKEN:?}" "${GITLAB_NAMESPACE_ID:?}" "${GITLAB_NAMESPACE_PATH:?}"
-GH_OWNER="aon-co-jp"
+GH_OWNER="${GH_OWNER:-aon-co-jp}" # ミラー元のGitHubアカウント/組織名(既定はこのリポジトリの所有者向けの値)
 GL_API="https://gitlab.com/api/v4"
 RELEASE_KEEP="${RELEASE_KEEP:-make-disk:3}"
 META_PROJECT="${METADATA_PROJECT:-github-metadata-backup}"
