@@ -1,0 +1,180 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>open-mirror デモ</title>
+<meta name="description" content="open-mirror の厳選リスト・圧縮と展開・暗号化と復号をブラウザの中だけで体験するデモ。">
+<style>
+:root{--bg:#fff;--fg:#1c2330;--muted:#5b6678;--card:#f4f6fa;--line:#d5dbe6;--accent:#1f6feb;--ok:#1a7f37;--ng:#cf222e;--warn:#9a6700}
+@media (prefers-color-scheme:dark){:root{--bg:#0f141b;--fg:#e6ebf2;--muted:#9aa6b8;--card:#171e29;--line:#2a3445;--accent:#6aa9ff;--ok:#3fb950;--ng:#ff7b72;--warn:#d29922}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.7 system-ui,"Segoe UI","Hiragino Sans","Yu Gothic UI",sans-serif}
+main{max-width:920px;margin:0 auto;padding:20px 16px 56px}
+h1{font-size:1.7rem;margin:.2em 0}
+h2{font-size:1.15rem;margin:1.8em 0 .5em;border-bottom:1px solid var(--line);padding-bottom:.25em}
+a{color:var(--accent)}
+.notice{background:var(--card);border:1px solid var(--warn);border-radius:10px;padding:10px 14px;margin:10px 0;font-size:.93rem}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin:10px 0}
+.tablewrap{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:.93rem;min-width:620px}
+th,td{border-bottom:1px solid var(--line);padding:6px 8px;text-align:left;vertical-align:middle}
+select,input[type=text],input[type=password],button{font:inherit;color:inherit;background:var(--bg);border:1px solid var(--line);border-radius:7px;padding:6px 10px}
+button{cursor:pointer;background:var(--accent);color:#fff;border-color:var(--accent);font-weight:600}
+button.sub{background:transparent;color:var(--accent)}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:8px 0}
+.muted,small{color:var(--muted)}
+.en{color:var(--muted);font-size:.9rem}
+pre{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:10px;overflow:auto;font-size:.85rem;max-height:240px;white-space:pre-wrap;word-break:break-all}
+.ok{color:var(--ok)}.ng{color:var(--ng)}
+.bar{height:10px;border-radius:5px;background:var(--line);overflow:hidden}.bar>i{display:block;height:100%;background:var(--accent);width:0}
+</style>
+</head>
+<body>
+<main>
+<p><a href="/open-mirror/">← open-mirror</a></p>
+<h1>open-mirror デモ <span class="en">/ demo</span></h1>
+<div class="notice">
+<b>これは説明用のデモです。</b>表のデータは<b>架空のサンプル</b>で、あなたのファイルは一切読みません。すべてこのブラウザの中だけで動き、<b>何も送信しません</b>。実際のバックアップは行いません。<br>
+<span class="en">This is an illustration. The data below is made up; your files are never read, nothing is uploaded, and no real backup is made.</span>
+</div>
+
+<h2>1. 厳選リスト <span class="en">Curation list</span></h2>
+<p class="muted">各行の「印」を選ぶと、バックアップされる合計の大きさが変わります。<span class="en"> Change the mark per row and watch the total.</span></p>
+<div class="tablewrap"><table id="list">
+<thead><tr><th>バックアップ元<br><small>source</small></th><th>項目<br><small>item</small></th><th>容量<br><small>size</small></th><th>再取得<br><small>re-creatable</small></th><th>印<br><small>mark</small></th></tr></thead>
+<tbody></tbody>
+</table></div>
+<div class="card">
+  <div class="row"><b>選んだ合計 / Selected total:</b> <span id="total">0</span>
+  <span class="muted" id="ratio"></span></div>
+  <div class="bar"><i id="bar"></i></div>
+  <p class="muted" style="margin:6px 0 0">◎=最新だけ残す ○=世代を絞って残す △=要確認(今は含めない) ×=バックアップしない。<span class="en"> ◎ latest only, ○ a few generations, △ undecided (excluded), × skip.</span></p>
+</div>
+<div class="row">
+  <label>保存先 / Destination
+    <select id="dest"><option>GitLab(非公開)</option><option>GitHub の非公開リポジトリ</option><option>手元のドライブ</option></select>
+  </label>
+  <button id="mk">厳選リストを作る / Build the list</button>
+  <button class="sub" id="dl" disabled>リストをダウンロード / Download</button>
+</div>
+<pre id="listout" hidden></pre>
+
+<h2>2. 圧縮と展開 <span class="en">Compress and extract</span></h2>
+<p class="muted">上のリストを、ブラウザの機能(gzip)で実際に圧縮し、展開して元に戻ることを確かめます。<span class="en"> Really compresses the list with gzip, then extracts it and checks it matches.</span></p>
+<div class="row"><button id="zip" disabled>圧縮して展開 / Compress &amp; extract</button></div>
+<pre id="zipout" hidden></pre>
+
+<h2>3. 暗号化と復号 <span class="en">Encrypt and decrypt</span></h2>
+<p class="muted">パスフレーズから鍵を作り(PBKDF2)、AES-256-GCM で暗号化し、同じパスフレーズで復号します。パスフレーズは保存も送信もしません。<span class="en"> Key from a passphrase (PBKDF2), AES-256-GCM. The passphrase is never stored or sent.</span></p>
+<div class="row">
+  <label>パスフレーズ / Passphrase <input type="password" id="pw" value="demo-passphrase" autocomplete="off"></label>
+  <button id="enc" disabled>暗号化して復号 / Encrypt &amp; decrypt</button>
+</div>
+<pre id="encout" hidden></pre>
+
+<h2>4. ネットに繋がったら開始 <span class="en">Start when online</span></h2>
+<p class="muted">スマホ・タブレット・PC は、ネットに繋がった瞬間にバックアップを始めます。ここではブラウザの接続状態の変化を見て、始まる様子を模擬します(機内モードやWi-Fiの切断→再接続を試せます)。<br>
+<span class="en">Devices start when they come online. This watches your browser's connection state and simulates the start (try toggling airplane mode / Wi-Fi).</span></p>
+<div class="card"><div class="row"><b>現在 / Now:</b> <span id="net"></span></div><pre id="netlog"></pre></div>
+</main>
+
+<script>
+(function(){
+  var $=function(id){return document.getElementById(id)};
+  // 架空のサンプル(MB)
+  var ITEMS=[
+    ['PC','文書・設計データ / documents',850,'いいえ / no','◎'],
+    ['PC','ビルド成果物 target/ / build output',4200,'はい / yes','×'],
+    ['スマホ / phone','写真・動画 / photos & videos',12800,'いいえ / no','○'],
+    ['スマホ / phone','アプリのキャッシュ / app cache',2600,'はい / yes','×'],
+    ['タブレット / tablet','メモ・手書き / notes',320,'いいえ / no','◎'],
+    ['VPS','データベースの書き出し / DB dump',47,'いいえ / no','◎'],
+    ['VPS','設定(nginx・systemd) / config',1,'いいえ / no','◎'],
+    ['VPS','リポジトリのclone / repo clones',21000,'はい / yes','×'],
+    ['レンタルサーバー / rental server','サイトのアップロード画像 / uploads',2400,'いいえ / no','○'],
+    ['GitHub','公開リポジトリ(最新) / public repos',2800,'はい(GitHub) / yes','△'],
+    ['ブログ / blog','記事の書き出し / posts export',180,'いいえ / no','◎']
+  ];
+  var MARKS=['◎','○','△','×'];
+  var tb=document.querySelector('#list tbody');
+  ITEMS.forEach(function(it,i){
+    var tr=document.createElement('tr');
+    var sz=it[2]>=1024?(it[2]/1024).toFixed(1)+' GB':it[2]+' MB';
+    tr.innerHTML='<td>'+it[0]+'</td><td>'+it[1]+'</td><td>'+sz+'</td><td>'+it[3]+'</td><td></td>';
+    var sel=document.createElement('select');
+    MARKS.forEach(function(m){var o=document.createElement('option');o.textContent=m;if(m===it[4])o.selected=true;sel.appendChild(o)});
+    sel.addEventListener('change',function(){it[4]=sel.value;sum();});
+    tr.lastChild.appendChild(sel);tb.appendChild(tr);
+  });
+  var grand=ITEMS.reduce(function(a,b){return a+b[2]},0);
+  function fmt(mb){return mb>=1024?(mb/1024).toFixed(2)+' GB':mb+' MB'}
+  function sum(){
+    var s=ITEMS.reduce(function(a,b){return a+((b[4]==='◎'||b[4]==='○')?b[2]:0)},0);
+    $('total').textContent=fmt(s);
+    $('ratio').textContent='/ 全体 '+fmt(grand)+'('+(s/grand*100).toFixed(1)+'%)';
+    $('bar').style.width=Math.max(0.5,s/grand*100)+'%';
+  }
+  sum();
+
+  var listText='',enc=new TextEncoder(),dec=new TextDecoder();
+  $('mk').onclick=function(){
+    var lines=['# open-mirror 厳選リスト(デモ・架空データ) / curation list (demo, made-up data)','# 保存先 / destination: '+$('dest').value,'source\titem\tsize_mb\tre_creatable\tmark'];
+    ITEMS.forEach(function(it){lines.push([it[0],it[1],it[2],it[3],it[4]].join('\t'))});
+    listText=lines.join('\n')+'\n';
+    $('listout').hidden=false;$('listout').textContent=listText;
+    $('dl').disabled=false;$('zip').disabled=false;$('enc').disabled=false;
+  };
+  $('dl').onclick=function(){
+    var a=document.createElement('a');a.href=URL.createObjectURL(new Blob([listText],{type:'text/tab-separated-values;charset=utf-8'}));
+    a.download='open-mirror-curation-demo.tsv';a.click();setTimeout(function(){URL.revokeObjectURL(a.href)},2000);
+  };
+  async function stream(buf,T){
+    var s=new Blob([buf]).stream().pipeThrough(new T());
+    return new Uint8Array(await new Response(s).arrayBuffer());
+  }
+  $('zip').onclick=async function(){
+    var out=$('zipout');out.hidden=false;
+    if(typeof CompressionStream==='undefined'){out.textContent='このブラウザは圧縮に未対応です。 / This browser lacks CompressionStream.';return}
+    var raw=enc.encode(listText);
+    var z=await stream(raw,function(){return new CompressionStream('gzip')});
+    var back=await stream(z,function(){return new DecompressionStream('gzip')});
+    var same=dec.decode(back)===listText;
+    out.innerHTML='元 / original: '+raw.length+' bytes\n圧縮後 / compressed: '+z.length+' bytes ('+(z.length/raw.length*100).toFixed(0)+'%)\n展開して比較 / extracted & compared: '+(same?'<span class="ok">一致 / identical</span>':'<span class="ng">不一致 / mismatch</span>');
+  };
+  function hex(u){return Array.prototype.map.call(u,function(b){return ('0'+b.toString(16)).slice(-2)}).join('')}
+  $('enc').onclick=async function(){
+    var out=$('encout');out.hidden=false;
+    if(!window.crypto||!crypto.subtle){out.textContent='このブラウザ(またはhttpの接続)は暗号化に未対応です。 / WebCrypto unavailable.';return}
+    var pw=$('pw').value,salt=crypto.getRandomValues(new Uint8Array(16)),iv=crypto.getRandomValues(new Uint8Array(12));
+    var base=await crypto.subtle.importKey('raw',enc.encode(pw),'PBKDF2',false,['deriveKey']);
+    var key=await crypto.subtle.deriveKey({name:'PBKDF2',salt:salt,iterations:200000,hash:'SHA-256'},base,{name:'AES-GCM',length:256},false,['encrypt','decrypt']);
+    var ct=new Uint8Array(await crypto.subtle.encrypt({name:'AES-GCM',iv:iv},key,enc.encode(listText)));
+    var msg='暗号文(先頭32バイト) / ciphertext (first 32 bytes): '+hex(ct.slice(0,32))+'…\n';
+    try{
+      var pt=await crypto.subtle.decrypt({name:'AES-GCM',iv:iv},key,ct);
+      msg+='同じパスフレーズで復号 / decrypt with same passphrase: '+(dec.decode(pt)===listText?'<span class="ok">一致 / identical</span>':'<span class="ng">不一致</span>')+'\n';
+    }catch(e){msg+='復号に失敗 / decrypt failed\n'}
+    try{
+      var k2=await crypto.subtle.deriveKey({name:'PBKDF2',salt:salt,iterations:200000,hash:'SHA-256'},await crypto.subtle.importKey('raw',enc.encode(pw+'x'),'PBKDF2',false,['deriveKey']),{name:'AES-GCM',length:256},false,['decrypt']);
+      await crypto.subtle.decrypt({name:'AES-GCM',iv:iv},k2,ct);
+      msg+='間違ったパスフレーズ: 復号できてしまった(異常)';
+    }catch(e){msg+='間違ったパスフレーズ / wrong passphrase: <span class="ok">復号できない(正しい動作) / cannot decrypt (correct)</span>'}
+    out.innerHTML=msg;
+  };
+
+  var log=$('netlog');
+  function stamp(){return new Date().toLocaleTimeString()}
+  function state(){$('net').innerHTML=navigator.onLine?'<span class="ok">オンライン / online</span>':'<span class="ng">オフライン / offline</span>'}
+  function add(t){log.textContent=stamp()+'  '+t+'\n'+log.textContent}
+  state();add(navigator.onLine?'オンライン。接続の変化を待っています。 / online; watching for changes.':'オフライン。繋がるまで待ちます。 / offline; waiting.');
+  window.addEventListener('offline',function(){state();add('オフラインになりました。バックアップを一時停止。 / went offline; paused.')});
+  window.addEventListener('online',function(){
+    state();add('オンラインに戻りました。バックアップを開始(模擬)。 / back online; backup starts (simulated).');
+    var sel=ITEMS.filter(function(i){return i[4]==='◎'||i[4]==='○'});
+    add('対象 '+sel.length+' 件・'+fmt(sel.reduce(function(a,b){return a+b[2]},0))+'(実際には何も送りません) / '+sel.length+' items (nothing is sent).');
+  });
+})();
+</script>
+</body>
+</html>

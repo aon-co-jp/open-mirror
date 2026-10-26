@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>open-mirror</title>
+<meta name="description" content="必要なものだけを選んで、公開・非公開を問わずバックアップ・ミラーするツール。open-mirror / A tool that backs up only what you pick.">
+<style>
+:root{--bg:#fff;--fg:#1c2330;--muted:#5b6678;--card:#f4f6fa;--line:#d5dbe6;--accent:#1f6feb;--ok:#1a7f37;--ng:#cf222e;--warn:#9a6700}
+@media (prefers-color-scheme:dark){:root{--bg:#0f141b;--fg:#e6ebf2;--muted:#9aa6b8;--card:#171e29;--line:#2a3445;--accent:#6aa9ff;--ok:#3fb950;--ng:#ff7b72;--warn:#d29922}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.7 system-ui,"Segoe UI","Hiragino Sans","Yu Gothic UI",sans-serif}
+main{max-width:860px;margin:0 auto;padding:24px 16px 56px}
+h1{font-size:1.9rem;margin:.2em 0}
+h2{font-size:1.2rem;margin:2em 0 .5em;border-bottom:1px solid var(--line);padding-bottom:.25em}
+.lead{color:var(--muted);margin:.2em 0 1em}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin:12px 0}
+.btn{display:inline-block;padding:9px 16px;border-radius:8px;background:var(--accent);color:#fff;text-decoration:none;font-weight:600;margin:4px 8px 4px 0}
+.btn.sub{background:transparent;color:var(--accent);border:1px solid var(--accent)}
+a{color:var(--accent)}
+table{border-collapse:collapse;width:100%;font-size:.95rem}
+th,td{border-bottom:1px solid var(--line);padding:6px 8px;text-align:left;vertical-align:top}
+.tag{display:inline-block;font-size:.78rem;padding:1px 8px;border-radius:999px;border:1px solid var(--line);white-space:nowrap}
+.tag.on{color:var(--ok);border-color:var(--ok)}.tag.plan{color:var(--warn);border-color:var(--warn)}
+.ok{color:var(--ok)}.ng{color:var(--ng)}
+small,.muted{color:var(--muted)}
+.en{color:var(--muted);font-size:.93rem}
+</style>
+</head>
+<body>
+<main>
+<h1>open-mirror</h1>
+<p class="lead">必要なものだけを選んで、バックアップ・ミラーするツール。<br>
+<span class="en">A tool that backs up and mirrors only what you choose.</span></p>
+<p>
+  <a class="btn" href="/open-mirror/demo/">デモを試す / Try the demo</a>
+  <a class="btn sub" href="https://github.com/aon-co-jp/open-mirror">GitHub</a>
+</p>
+
+<h2>いま動いているもの / Running today</h2>
+<div class="card">
+  <p><span class="tag on">稼働中 / live</span>
+  GitHub の <code>aon-co-jp</code> の<strong>公開リポジトリ</strong>を、毎日 04:00(JST)に GitLab (<code>aon-co-jp-group</code>) へ一方向でミラーします。
+  非公開リポジトリは対象外です。GitHub Actions で動かしており、このリポジトリを公開にしてあるため実行は無料です。<br>
+  <span class="en">Every day at 04:00 JST, the public repositories of <code>aon-co-jp</code> on GitHub are mirrored one-way to GitLab. Private repositories are not included. It runs on GitHub Actions, which is free because this repository is public.</span></p>
+  <p><b>直近の実行 / Recent runs</b>(GitHub から取得 / fetched live from GitHub)</p>
+  <table id="runs"><tbody><tr><td class="muted">読み込み中… / loading…</td></tr></tbody></table>
+</div>
+
+<h2>これから作るもの / What is being built</h2>
+<div class="card">
+  <p>「全部を丸ごと」ではなく、<strong>本当に必要な最小限のデータだけ</strong>を厳選してバックアップします。
+  厳選するための一覧(リスト)を用意し、残す・最新だけ残す・捨てるを選べるようにします。<br>
+  <span class="en">Instead of copying everything, keep only the data that really matters, chosen from a curation list (keep / latest only / skip).</span></p>
+  <table>
+    <thead><tr><th>項目 / Item</th><th>内容 / What</th><th>状態 / Status</th></tr></thead>
+    <tbody>
+      <tr><td>バックアップ元<br><span class="en">Sources</span></td>
+          <td>PC・スマホ・タブレット(ネットに繋がったら自動で開始)、VPS、レンタルサーバー、GitHub、ブログ など<br>
+          <span class="en">PCs, phones, tablets (start automatically once online), VPS, rental servers, GitHub, blogs…</span></td>
+          <td><span class="tag plan">予定 / planned</span></td></tr>
+      <tr><td>厳選リスト<br><span class="en">Curation list</span></td>
+          <td>容量・最終更新日・再取得できるか、を並べて印を付ける(◎残す ○世代を絞る △要確認 ×不要)。<a href="/open-mirror/demo/">デモで体験できます。</a><br>
+          <span class="en">Size, last change and "can it be re-created?" side by side, with a mark per row. Try it in the demo.</span></td>
+          <td><span class="tag plan">予定 / planned</span><br><small>デモは動作します / demo works</small></td></tr>
+      <tr><td>保存先<br><span class="en">Destinations</span></td>
+          <td>GitLab、GitHub の非公開リポジトリ、手元のHDDなど、選べるようにする<br>
+          <span class="en">GitLab, private GitHub repositories, a local drive, … selectable</span></td>
+          <td><span class="tag plan">予定 / planned</span><br><small>GitLab のみ稼働 / only GitLab today</small></td></tr>
+      <tr><td>圧縮・展開<br><span class="en">Compress / extract</span></td>
+          <td>圧縮して保存し、いつでも展開できる<br><span class="en">Stored compressed, extractable any time</span></td>
+          <td><span class="tag plan">予定 / planned</span></td></tr>
+      <tr><td>暗号化・復号<br><span class="en">Encrypt / decrypt</span></td>
+          <td>必要なものだけ暗号化。秘密(パスワード・トークン)を含むものは暗号化を必須にする<br>
+          <span class="en">Optional encryption; anything containing secrets must be encrypted</span></td>
+          <td><span class="tag plan">予定 / planned</span></td></tr>
+    </tbody>
+  </table>
+  <p class="muted">「予定」の項目は、まだ動いていません。デモはブラウザの中だけで動く説明用で、実際のバックアップは行いません。<br>
+  <span class="en">Items marked "planned" do not run yet. The demo works only inside your browser and does not back anything up.</span></p>
+</div>
+
+<h2>安全について / Safety</h2>
+<ul>
+  <li>トークンは GitHub / GitLab の Secrets に置き、このページやリポジトリには入れません。 / Tokens live in Secrets, never in this page or the repository.</li>
+  <li>暗号化しない保存先には、パスワードなどの秘密を入れません。 / Secrets are never put in unencrypted destinations.</li>
+</ul>
+
+<p class="muted">© aon-co-jp ・ <a href="https://github.com/aon-co-jp/open-mirror">github.com/aon-co-jp/open-mirror</a></p>
+</main>
+
+<script>
+(function(){
+  var tb=document.querySelector('#runs tbody');
+  function row(r){
+    var c=r.conclusion||r.status, cls=c==='success'?'ok':(c==='failure'?'ng':'muted');
+    var mark=c==='success'?'成功 / success':(c==='failure'?'失敗 / failed':(c||'-'));
+    var d=new Date(r.created_at);
+    return '<tr><td>'+d.toLocaleString()+'</td><td class="'+cls+'">'+mark+'</td>'+
+      '<td><a href="'+r.html_url+'">#'+r.run_number+'</a></td></tr>';
+  }
+  fetch('https://api.github.com/repos/aon-co-jp/open-mirror/actions/runs?per_page=5',{headers:{Accept:'application/vnd.github+json'}})
+    .then(function(r){if(!r.ok)throw new Error(r.status);return r.json();})
+    .then(function(j){
+      var runs=(j.workflow_runs||[]);
+      tb.innerHTML=runs.length?runs.map(row).join(''):'<tr><td class="muted">実行履歴なし / no runs</td></tr>';
+    })
+    .catch(function(){tb.innerHTML='<tr><td class="muted">取得できませんでした(GitHub の制限など)。<a href="https://github.com/aon-co-jp/open-mirror/actions">Actions を開く</a> / could not load; <a href="https://github.com/aon-co-jp/open-mirror/actions">open Actions</a></td></tr>';});
+})();
+</script>
+</body>
+</html>
