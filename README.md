@@ -42,3 +42,12 @@ GitHub Actions is free for public repositories on standard runners (private repo
 
 - 稼働中: GitHub の公開リポジトリ → GitLab の毎日のミラー(GitHub Actions、本リポジトリを公開にして無料化)。
 - 予定(まだ動かない): バックアップ元=PC・スマホ・タブレット(ネットに繋がったら自動開始)・VPS・レンタルサーバー・GitHub・ブログ、保存先=GitHub・GitLab・ローカルPC・タブレット・スマホ、厳選リスト、圧縮・展開、暗号化・復号。
+
+## VPS の厳選バックアップ(自動) / Curated VPS backup (automatic)
+
+- 公開リポジトリ [`aon-co-jp/vps-backup`](https://github.com/aon-co-jp/vps-backup) に、**秘密情報・個人情報を除いた**最小限(nginx/systemd/cron の設定、DBの構造のみ)を圧縮アーカイブ(`curated/*.tar.zst`、展開は `zstd -dc … | tar -xf -`)で置く。最新の1つだけ残す。
+- 秘密または個人情報を含むもの(DBの中身・ロール、パスワード類や秘密語・メール・IP・氏名を含む設定、`.env`、`store.json`、第三者の文章を含む `aruaru-llm/data`)は GPG 公開鍵で暗号化し、VPS の `/root/vps-secrets-out`(最新2つ)から手元 `F:ps-secrets` へ取り寄せる。復号は手元の秘密鍵(`F:ps-data-backup-gpg-PRIVATE.asc`)でのみ可能。
+- VPS: `vps-curated-backup.timer`(毎日03:45)→ `deploy/vps-curated-backup.sh`。設定は `/root/vps-curated-backup.conf`(リポジトリには入れない)。
+- 手元PC: `deploy/pull-vps-secrets.ps1`。タスク `vps-secrets-pull`(毎日10:00)+ ログオン時(スタートアップの `vps-secrets-pull.cmd`)。ネットに繋がっていなければ次の機会に取り寄せる。
+- 復号して中身を見るには手元に `zstd` が要る(`winget install zstd` など)。
+- 判定は保守的(秘密語・メール・氏名・電話・127.*以外のIPのどれか1つでも見つかれば暗号側)。除外しすぎる方を選ぶ。
