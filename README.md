@@ -1,3 +1,5 @@
+> Latest translations / 翻訳の最新版: [0-LATEST-TRANSLATIONS.md](0-LATEST-TRANSLATIONS.md)
+
 # open-mirror(旧 gitlab-mirror)
 
 `github.com/aon-co-jp` の**公開**リポジトリ(非公開は対象外)を `gitlab.com/aon-co-jp-group` へ**一方向**でミラーするバックアップ用GitHub Actions。
